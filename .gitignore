@@ -17,3 +17,4 @@
 # For now, let's just ignore the intermediate object files:
 *.o
 *.os
+addons/NEAT/bin/
