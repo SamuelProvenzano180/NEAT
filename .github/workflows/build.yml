@@ -46,7 +46,7 @@ jobs:
         with:
           name: binaries-${{ matrix.platform }}
           path: |
-            bin/**/*.dll
-            bin/**/*.so
-            bin/**/*.dylib
-            bin/**/*.framework
+            **/*.dll
+            **/*.so
+            **/*.dylib
+            **/*.framework
