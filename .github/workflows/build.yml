@@ -41,12 +41,10 @@ jobs:
         run: |
           scons platform=${{ matrix.platform }} target=template_release arch=${{ matrix.arch }}
 
-      - name: Upload Binaries
+      # ONLY ONE UPLOAD STEP NEEDED
+      - name: Upload Plugin
         uses: actions/upload-artifact@v4
         with:
-          name: binaries-${{ matrix.platform }}
-          path: |
-            **/*.dll
-            **/*.so
-            **/*.dylib
-            **/*.framework
+          # This magically changes to NEAT-linux, NEAT-windows, or NEAT-macos
+          name: NEAT-${{ matrix.platform }} 
+          path: addons/NEAT/
