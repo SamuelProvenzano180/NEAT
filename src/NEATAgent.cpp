@@ -272,7 +272,7 @@ PackedFloat32Array NEATAgent::get_champion_guess(PackedFloat32Array inputs){
 void NEATAgent::set_network_fitness(int index, float fitness){
     //Error check
     ERR_FAIL_COND_MSG(index < 0 || index >= this->population_size, "NEATAgent Set Error: Index must be in range 0 to population_size-1");
-    ERR_FAIL_COND_MSG(fitness < 0.0001, "NEATAgent Set Error: Fitness must be 0.0001 or greater");
+    ERR_FAIL_COND_MSG(fitness <= 0.0001, "NEATAgent Set Error: Fitness must be greater than 0.0001");
 
     //Set network at index's fitness to fitness value
     Network* chosen_network = this->population[index];
