@@ -1,0 +1,19 @@
+# Godot-specific ignores
+.godot/
+*.translation
+
+# SCons build junk
+.sconsign.dblite
+
+# Mac junk
+.DS_Store
+
+# IDE junk
+.vscode/
+
+# Binary outputs (we ignore these locally so we don't accidentally commit test builds)
+# But since you want to release them, you can leave this out or be specific.
+# usually we ignore bin/* but you might want to keep it if you are committing binaries manually.
+# For now, let's just ignore the intermediate object files:
+*.o
+*.os
