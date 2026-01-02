@@ -1,0 +1,24 @@
+[gd_scene load_steps=2 format=3 uid="uid://d2dk3mn7td8aj"]
+
+[ext_resource type="Script" uid="uid://cf1mg4negdpne" path="res://LunarLander/LunarLander.gd" id="1_wgere"]
+
+[node name="LunarLander" type="Node2D"]
+script = ExtResource("1_wgere")
+
+[node name="ColorRect" type="ColorRect" parent="."]
+offset_left = -576.0
+offset_top = -324.0
+offset_right = 576.0
+offset_bottom = 324.0
+color = Color(0, 0, 0, 1)
+
+[node name="Flag" type="Node2D" parent="."]
+
+[node name="ColorRect" type="ColorRect" parent="Flag"]
+offset_left = -32.0
+offset_top = -24.0
+offset_right = 32.0
+
+[node name="Ships" type="Node2D" parent="."]
+
+[node name="Camera2D" type="Camera2D" parent="."]

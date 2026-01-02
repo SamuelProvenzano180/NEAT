@@ -1,0 +1,52 @@
+name: Build GDExtension
+on: [push, pull_request, workflow_dispatch]
+
+jobs:
+  build:
+    name: Build on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            platform: linux
+            arch: x86_64
+          - os: windows-latest
+            platform: windows
+            arch: x86_64
+          - os: macos-latest
+            platform: macos
+            arch: universal
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+
+      - name: Install SCons
+        run: pip install scons
+
+      - name: Build Debug
+        run: |
+          scons platform=${{ matrix.platform }} target=template_debug arch=${{ matrix.arch }}
+        
+      - name: Build Release
+        run: |
+          scons platform=${{ matrix.platform }} target=template_release arch=${{ matrix.arch }}
+
+      - name: Upload Binaries
+        uses: actions/upload-artifact@v4
+        with:
+          name: binaries-${{ matrix.platform }}
+          path: |
+            bin/**/*.dll
+            bin/**/*.so
+            bin/**/*.dylib
+            bin/**/*.framework
