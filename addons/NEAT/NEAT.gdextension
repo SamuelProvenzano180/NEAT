@@ -1,7 +1,6 @@
 [configuration]
 entry_symbol = "neat_init"
 compatibility_minimum = "4.5"
-documentation_path = "doc_classes"
 
 [libraries]
 macos.debug = "res://addons/NEAT/bin/NEAT.macos.template_debug.framework/libNEAT.macos.template_debug"

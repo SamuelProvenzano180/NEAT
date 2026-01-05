@@ -67,9 +67,7 @@ namespace godot {
         void next_generation();
 
         float get_champion_fitness();
-        int get_network_connection_count(int index);
         int get_champion_connection_count();
-        int get_network_species_id(int index);
         void set_stagnation_limit(int limit);
         void set_connection_size_limit(int limit);
         Array extract_champion_data();

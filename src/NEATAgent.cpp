@@ -5,9 +5,9 @@
 using namespace godot;
 
 void NEATAgent::_bind_methods() {
-    ClassDB::bind_method(D_METHOD("initialize_population", "inputs", "outputs", "population_size", "hidden_activation", "output_activation", "species_count"), &NEATAgent::initialize_population, DEFVAL(10), DEFVAL("tanh"), DEFVAL("tanh"), DEFVAL(150));
-    ClassDB::bind_method(D_METHOD("import_template", "network_data", "population_size", "species_count"), &NEATAgent::import_template, DEFVAL(10), DEFVAL(150));
-    ClassDB::bind_method(D_METHOD("set_mutation_rates", "rate_weight_mutate", "rate_connection_mutate", "rate_enable_mutate", "rate_node_mutate"), &NEATAgent::set_mutation_rates, DEFVAL(0.03), DEFVAL(0.05), DEFVAL(0.1), DEFVAL(0.8));
+    ClassDB::bind_method(D_METHOD("initialize_population", "inputs", "outputs", "population_size", "hidden_activation", "output_activation", "species_count"), &NEATAgent::initialize_population, DEFVAL(150), DEFVAL("tanh"), DEFVAL("tanh"), DEFVAL(8));
+    ClassDB::bind_method(D_METHOD("import_template", "network_data", "population_size", "species_count"), &NEATAgent::import_template, DEFVAL(150), DEFVAL(8));
+    ClassDB::bind_method(D_METHOD("set_mutation_rates", "rate_weight_mutate", "rate_connection_mutate", "rate_enable_mutate", "rate_node_mutate"), &NEATAgent::set_mutation_rates, DEFVAL(0.8), DEFVAL(0.1), DEFVAL(0.05), DEFVAL(0.03));
     ClassDB::bind_method(D_METHOD("get_network_guess", "index", "inputs"), &NEATAgent::get_network_guess);
     ClassDB::bind_method(D_METHOD("get_champion_guess", "inputs"), &NEATAgent::get_champion_guess);
     ClassDB::bind_method(D_METHOD("set_network_fitness", "index", "fitness"), &NEATAgent::set_network_fitness);
@@ -16,7 +16,6 @@ void NEATAgent::_bind_methods() {
     ClassDB::bind_method(D_METHOD("get_champion_connection_count"), &NEATAgent::get_champion_connection_count);
     ClassDB::bind_method(D_METHOD("set_stagnation_limit", "limit"), &NEATAgent::set_stagnation_limit);
     ClassDB::bind_method(D_METHOD("set_connection_size_limit", "limit"), &NEATAgent::set_connection_size_limit);
-    ClassDB::bind_method(D_METHOD("get_network_connection_count", "index"), &NEATAgent::get_network_connection_count);
     ClassDB::bind_method(D_METHOD("extract_champion_data"), &NEATAgent::extract_champion_data);
     ClassDB::bind_method(D_METHOD("force_champion_reset"), &NEATAgent::force_champion_reset);
 }
@@ -525,13 +524,6 @@ float NEATAgent::get_champion_fitness(){
 int NEATAgent::get_champion_connection_count(){
     ERR_FAIL_COND_V_MSG(this->global_champion == nullptr, -1, "NEATAgent Champion Error: No champion yet");
     return this->global_champion->get_active_connection_count();
-}
-
-int NEATAgent::get_network_connection_count(int index){
-    ERR_FAIL_COND_V_MSG(index < 0 || index >= this->population_size, -1, "NEATAgent Guess Error: Index must be in range 0 to population_size-1");
-
-    Network* chosen_network = this->population[index];
-    return chosen_network->get_active_connection_count();
 }
 
 void NEATAgent::set_stagnation_limit(int limit){
