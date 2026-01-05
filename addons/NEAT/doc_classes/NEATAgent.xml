@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<class name="NEATAgent" inherits="RefCounted">
+    <brief_description>
+        My custom NEAT AI Agent.
+    </brief_description>
+    <description>
+        This is the main class for the NEAT algorithm. If you can see this text, the documentation is linked correctly!
+    </description>
+    <methods>
+        <method name="initialize_population">
+            <return type="void" />
+            <param index="0" name="inputs" type="int" />
+            <param index="1" name="outputs" type="int" />
+            <param index="2" name="population_size" type="int" default="150" />
+            <param index="3" name="hidden_activation" type="String" default="&quot;tanh&quot;" />
+            <param index="4" name="output_activation" type="String" default="&quot;tanh&quot;" />
+            <param index="5" name="species_count" type="int" default="5" />
+            <description>
+                Initializes the population. 
+            </description>
+        </method>
+    </methods>
+</class>
