@@ -72,6 +72,7 @@ namespace godot {
         void set_connection_size_limit(int limit);
         Array extract_champion_data();
         void force_champion_reset();
+        bool has_champion();
         
     };
 };

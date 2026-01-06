@@ -18,6 +18,7 @@ void NEATAgent::_bind_methods() {
     ClassDB::bind_method(D_METHOD("set_connection_size_limit", "limit"), &NEATAgent::set_connection_size_limit);
     ClassDB::bind_method(D_METHOD("extract_champion_data"), &NEATAgent::extract_champion_data);
     ClassDB::bind_method(D_METHOD("force_champion_reset"), &NEATAgent::force_champion_reset);
+    ClassDB::bind_method(D_METHOD("has_champion"), &NEATAgent::has_champion);
 }
 
 void NEATAgent::initialize_population(int inputs, int outputs, int population_size, godot::String hidden_activation, godot::String output_activation, int desired_species_count){
@@ -648,6 +649,13 @@ Array NEATAgent::extract_champion_data() {
 void NEATAgent::force_champion_reset(){
     this->global_champion = nullptr;
     this->global_highest_fitness = 0.0;
+}
+
+bool NEATAgent::has_champion(){
+    if (this->global_champion == nullptr){
+        return false;
+    }
+    return true;
 }
 
 NEATAgent::NEATAgent(){}
