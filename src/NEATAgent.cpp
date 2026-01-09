@@ -228,9 +228,7 @@ void NEATAgent::import_template(Array network_data, int population_size, int des
 
     //Create population based on imported network data
     for (int i = 0; i < this->population_size; i++){
-        std::vector<int> new_depth_data(depth_data);
-        std::vector<std::vector<float>> new_connection_data(connection_data);
-        population.push_back(new Network(this->inputs, this->outputs, &new_depth_data, &new_connection_data, this->hidden_activation, this->output_activation, true, this->rng, this));
+        population.push_back(new Network(this->inputs, this->outputs, &depth_data, &connection_data, this->hidden_activation, this->output_activation, true, this->rng, this));
     }
 }
 
@@ -378,12 +376,12 @@ void NEATAgent::next_generation(){
         }
     }
 
-    //Delete 75% of networks in all species so top 25% can reproduce
+    //Delete bottom 65% of networks in all species so top 35% can reproduce
     for (Species* s: this->species){
         if (s->networks.empty()) continue;
         s->sort_networks();
 
-        int survivors = ceil(s->networks.size() * 0.25);
+        int survivors = ceil(s->networks.size() * 0.35);
         if (survivors < 1) survivors = 1;
         for (int k = survivors; k < s->networks.size(); k++) {
             delete s->networks[k];
@@ -423,7 +421,7 @@ void NEATAgent::next_generation(){
         }
 
         //Kill species that haven't improved in 15 generations
-        if (s->age > 20 && s->gens_since_improved > 15) {
+        if (s->age > 25 && s->gens_since_improved > 20) {
             for (Network* n : s->networks) {
                 n->adjusted_fitness = 0.0f;
             }
