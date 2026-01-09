@@ -94,8 +94,8 @@ void NEATAgent::initialize_population(int inputs, int outputs, int population_si
     for (int i = 0; i < this->population_size; i++){
         std::vector<std::vector<float>> this_connection_data(connection_data);
         for (int j = 0; j < this_connection_data.size(); j++){
-            //Also randomize the weight value
-            this_connection_data[j][2] = dis(this->rng);
+            //Also randomize the weight value (if more connections start enabled, initialize their weight as smaller)
+            this_connection_data[j][2] = dis(this->rng) * (1.0 - initial_enabled_percent * 0.9);
 
             float enabled_rand_val = (dis(this->rng) + 1.0) / 2.0;
             if (enabled_rand_val * 0.99999 < initial_enabled_percent){ //* 0.999 just so it can never be equal to 1.0, because 1.0 !< 1.0 and dont want to use <= because then same issue with 0
@@ -228,7 +228,9 @@ void NEATAgent::import_template(Array network_data, int population_size, int des
 
     //Create population based on imported network data
     for (int i = 0; i < this->population_size; i++){
-        population.push_back(new Network(this->inputs, this->outputs, &depth_data, &connection_data, this->hidden_activation, this->output_activation, true, this->rng, this));
+        std::vector<int> new_depth_data(depth_data);
+        std::vector<std::vector<float>> new_connection_data(connection_data);
+        population.push_back(new Network(this->inputs, this->outputs, &new_depth_data, &new_connection_data, this->hidden_activation, this->output_activation, true, this->rng, this));
     }
 }
 
