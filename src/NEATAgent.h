@@ -57,7 +57,7 @@ namespace godot {
         NEATAgent();
         ~NEATAgent();
 
-        void initialize_population(int inputs, int outputs, int population_size = 100, String hidden_activation = "tanh", String output_activation = "tanh", int desired_species_count = 5);
+        void initialize_population(int inputs, int outputs, int population_size = 100, String hidden_activation = "tanh", String output_activation = "tanh", int desired_species_count = 5, float initial_enabled_percent = 0.25);
         void import_template(Array network_data, int population_size, int desired_species_count);
         void set_mutation_rates(float rate_weight_mutate = 0.95f, float rate_connection_mutate = 0.1f, float rate_enable_mutate = 0.15f, float rate_node_mutate = 0.002);
 

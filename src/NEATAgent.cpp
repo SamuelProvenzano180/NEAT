@@ -5,7 +5,7 @@
 using namespace godot;
 
 void NEATAgent::_bind_methods() {
-    ClassDB::bind_method(D_METHOD("initialize_population", "inputs", "outputs", "population_size", "hidden_activation", "output_activation", "species_count"), &NEATAgent::initialize_population, DEFVAL(150), DEFVAL("tanh"), DEFVAL("tanh"), DEFVAL(8));
+    ClassDB::bind_method(D_METHOD("initialize_population", "inputs", "outputs", "population_size", "hidden_activation", "output_activation", "species_count", "initial_enabled_percent"), &NEATAgent::initialize_population, DEFVAL(150), DEFVAL("tanh"), DEFVAL("tanh"), DEFVAL(8), DEFVAL(0.25));
     ClassDB::bind_method(D_METHOD("import_template", "network_data", "population_size", "species_count"), &NEATAgent::import_template, DEFVAL(150), DEFVAL(8));
     ClassDB::bind_method(D_METHOD("set_mutation_rates", "rate_weight_mutate", "rate_connection_mutate", "rate_enable_mutate", "rate_node_mutate"), &NEATAgent::set_mutation_rates, DEFVAL(0.8), DEFVAL(0.1), DEFVAL(0.05), DEFVAL(0.03));
     ClassDB::bind_method(D_METHOD("get_network_guess", "index", "inputs"), &NEATAgent::get_network_guess);
@@ -21,13 +21,14 @@ void NEATAgent::_bind_methods() {
     ClassDB::bind_method(D_METHOD("has_champion"), &NEATAgent::has_champion);
 }
 
-void NEATAgent::initialize_population(int inputs, int outputs, int population_size, godot::String hidden_activation, godot::String output_activation, int desired_species_count){
+void NEATAgent::initialize_population(int inputs, int outputs, int population_size, godot::String hidden_activation, godot::String output_activation, int desired_species_count, float initial_enabled_percent){
 
     //Set fields and error check
     ERR_FAIL_COND_MSG(inputs < 1, "NEATAgent Import Error: Input size must be greater than 0");
     ERR_FAIL_COND_MSG(outputs < 1, "NEATAgent Import Error: Output size must be greater than 0");
     ERR_FAIL_COND_MSG(desired_species_count < 5, "NEATAgent Import Error: Species count must be greater than 4");
     ERR_FAIL_COND_MSG(population_size <= desired_species_count * 10, "NEATAgent Import Error: Population size must be greater than species count * 10.0");
+    ERR_FAIL_COND_MSG(initial_enabled_percent > 1.0 || initial_enabled_percent < 0.0, "NEATAgent Import Error: Initial enabled percent must be in range 0.0 to 1.0");
 
     this->inputs = inputs + 1; //+1 accounts for bias neuron
     this->outputs = outputs;
@@ -96,7 +97,8 @@ void NEATAgent::initialize_population(int inputs, int outputs, int population_si
             //Also randomize the weight value
             this_connection_data[j][2] = dis(this->rng);
 
-            if (dis(this->rng) > 0.5){
+            float enabled_rand_val = (dis(this->rng) + 1.0) / 2.0;
+            if (enabled_rand_val * 0.99999 < initial_enabled_percent){ //* 0.999 just so it can never be equal to 1.0, because 1.0 !< 1.0 and dont want to use <= because then same issue with 0
                 this_connection_data[j][3] = 1.0;
             }
         }
