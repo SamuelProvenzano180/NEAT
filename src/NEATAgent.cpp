@@ -281,6 +281,244 @@ void NEATAgent::set_network_fitness(int index, float fitness){
     chosen_network->fitness = fitness;
 }
 
+// void NEATAgent::next_generation(){
+//     //Check if there was improvement from last generation
+//     if (this->global_highest_fitness > this->last_best_fitness) { 
+//         this->last_best_fitness = this->global_highest_fitness;
+//         this->generations_without_improvement = 0;
+//     } else {
+//         this->generations_without_improvement++;
+//     }
+
+//     //If hasnt improved in stagnation_limit amount of generations, continue...
+//     if (this->generations_without_improvement > stagnation_limit) {
+        
+//         //If there is no champion, create a default network as champion
+//         if (this->global_champion == nullptr) {
+//             this->global_champion = new Network(this->inputs, this->outputs, nullptr, nullptr, this->hidden_activation, this->output_activation, false, this->rng, this);
+//             this->global_champion->fitness = 0.01;
+//         }
+
+//         //Delete current population
+//         for (Network* n : this->population) {
+//             delete n;
+//         }
+//         this->population.clear(); 
+
+//         //Clear out old species
+//         for (Species* s : this->species) {
+//             s->networks.clear();
+//             delete s;
+//         }
+//         this->species.clear();
+
+//         //Keep champion in the new population
+//         this->population.push_back(new Network(this->inputs, this->outputs, &this->global_champion->get_depth_data(), &this->global_champion->get_connection_data(), this->hidden_activation, this->output_activation, false, this->rng, this));
+        
+//         //Repopulate from the champion
+//         for (int k = 1; k < this->population_size; k++) {
+//             Network* mutant = new Network(this->inputs, this->outputs, &this->global_champion->get_depth_data(), &this->global_champion->get_connection_data(), this->hidden_activation, this->output_activation, true, this->rng, this);
+//             this->population.push_back(mutant);
+//         }
+
+//         this->generations_without_improvement = 0;
+
+//         return;
+//     }
+
+//     //If improvement is occuring, clear all species members (spceies representative will still exist)
+//     for (Species* s : this->species) {
+//         s->networks.clear();
+//     }
+
+//     Network* best_performer = nullptr;
+//     Network* best_clone = nullptr;
+
+//     //Cycle through all members of the population
+//     for (int j = 0; j < population.size(); j++){
+//         Network* current_network = this->population[j];
+
+//         //Speciate
+//         bool found = false;
+//         for (Species* s : this->species) {
+//             //Compatibility check
+//             if (s->evaluate_compatibility(current_network) < this->compatibility_threshold) {
+//                 s->add_member(current_network);
+//                 found = true;
+//                 break;
+//             }
+//         }
+
+//         //If a network didnt fit into any species, create a new species with this network as the representative
+//         if (!found) {
+//             Species* new_s = new Species();
+//             new_s->add_member(current_network);
+//             // Important: Set identity for the new species
+//             new_s->representative_genome = current_network->get_connection_data();
+//             this->species.push_back(new_s);
+//         }
+
+//         //Get best performer out of previous generation
+//         if (best_performer == nullptr || current_network->fitness > best_performer->fitness){
+//             best_performer = current_network;
+            
+//             //Clone the best performer immediately
+//             if (best_clone != nullptr) delete best_clone;
+//             best_clone = new Network(this->inputs, this->outputs, &best_performer->get_depth_data(), &best_performer->get_connection_data(), this->hidden_activation, this->output_activation, false, this->rng, this);
+        
+//             //If best is better than global champion, change global champion to best
+//             if (current_network->fitness > this->global_highest_fitness) {
+//                 this->global_highest_fitness = current_network->fitness;
+//                 if (this->global_champion != nullptr) delete this->global_champion;
+//                 this->global_champion = new Network(this->inputs, this->outputs, &current_network->get_depth_data(), &current_network->get_connection_data(), this->hidden_activation, this->output_activation, false, this->rng, this);
+//                 this->global_champion->fitness = current_network->fitness;
+//             }
+//         }
+//     }
+
+//     //Delete bottom 50% of networks in all species so top 50% can reproduce
+//     for (Species* s: this->species){
+//         if (s->networks.empty()) continue;
+//         s->sort_networks();
+
+//         int survivors = ceil(s->networks.size() * 0.5);
+//         if (survivors < 1) survivors = 1;
+//         for (int k = survivors; k < s->networks.size(); k++) {
+//             delete s->networks[k];
+//         }
+//         s->networks.resize(survivors);
+//     }
+
+//     //Adjust each networks fitness by the size of the species
+//     for (Species* s: species){
+//         for (Network* network: s->networks){
+//             network->adjusted_fitness = network->fitness / s->networks.size();
+//         }
+//     }
+
+//     for (Species* s : this->species) {
+//         //Increase age
+//         s->age++;
+
+//         //Check for improvement
+//         float species_best = 0.0f;
+//         for (Network* n : s->networks) {
+//             if (n->fitness > species_best) species_best = n->fitness;
+//         }
+
+//         if (species_best > s->max_fitness_ever) {
+//             s->max_fitness_ever = species_best;
+//             s->gens_since_improved = 0;
+//         } else {
+//             s->gens_since_improved++;
+//         }
+
+//         //Give newer species a fitness bonus so they dont die too soon
+//         if (s->age < 10) {
+//             for (Network* n : s->networks) {
+//                 n->adjusted_fitness *= 1.5f;
+//             }
+//         }
+
+//         //Kill species that haven't improved in 15 generations
+//         if (s->age > 25 && s->gens_since_improved > 20) {
+//             for (Network* n : s->networks) {
+//                 n->adjusted_fitness = 0.0f;
+//             }
+//         }
+//     }
+
+//     float global_adjusted_sum = 0.0;
+//     for (Species* s: this->species){
+//         for (Network* network: s->networks){
+//             global_adjusted_sum += network->adjusted_fitness;
+//         }
+//     }
+
+//     std::vector<Network*> next_generation; 
+
+//     // Take the best network we found earlier and add to the new generation
+//     if (best_clone != nullptr) {
+//         next_generation.push_back(best_clone);
+//         best_clone = nullptr;
+//     }
+
+
+//     for (Species* s: this->species){
+//         //Calculate the sum for this species
+//         float species_adj_sum = 0.0;
+//         for (Network* network : s->networks) species_adj_sum += network->adjusted_fitness;
+        
+//         //Determine offspring count
+//         if (global_adjusted_sum == 0.0) break;
+//         int offspring_count = (species_adj_sum / global_adjusted_sum) * this->population_size;
+        
+//         if (offspring_count <= 0 && species_adj_sum > 0) offspring_count = 1;
+//         if (offspring_count <= 0) continue;
+
+//         //Perform crossover and add to next generation
+//         std::vector<Network*> babies = s->reproduce(offspring_count, this->rng);
+//         next_generation.insert(next_generation.end(), babies.begin(), babies.end());
+//     }
+
+//     //Since we could get a next_generation size less than population_size, we want to fill in remaining gaps
+//     while (next_generation.size() < this->population_size){
+//         if (this->species.empty()) break;
+        
+//         //Pick random species
+//         int s_idx = std::uniform_int_distribution<>(0, this->species.size()-1)(this->rng);
+//         Species* s = this->species[s_idx];
+        
+//         if (s->networks.empty()) continue;
+
+//         //Pick random network
+//         int n_idx = std::uniform_int_distribution<>(0, s->networks.size()-1)(this->rng);
+//         Network* parent = s->networks[n_idx];
+        
+//         //Create new child
+//         Network* new_net = new Network(this->inputs, this->outputs, &parent->get_depth_data(), &parent->get_connection_data(), this->hidden_activation, this->output_activation, true, this->rng, this);
+//         next_generation.push_back(new_net);
+//     }
+
+//     //Update representative genomes
+//     for (Species* s : this->species) {
+//         if (!s->networks.empty()) {
+//             s->representative_genome = s->networks[0]->get_connection_data(); //[0] is best since networks are sorted
+//         }
+//     }
+
+//     //Delete old parents
+//     for (Species* s : this->species) {
+//         for (Network* parent : s->networks) {
+//             delete parent;
+//         }
+//         s->networks.clear();
+//     }
+
+//     //Delete species object
+//     auto it = this->species.begin();
+//     while (it != this->species.end()) {
+//         if ((*it)->networks.empty()) {
+//             delete *it;
+//             it = this->species.erase(it);
+//         } else {
+//             ++it;
+//         }
+//     }
+
+//     this->population = next_generation; 
+
+//     //Adjust compatability threshold to make it easier or harder to join species based on the amount of species
+//     if (this->species.size() < this->desired_species_count -  3) {
+//         this->compatibility_threshold -= 0.3;
+//     } 
+//     else if (this->species.size() > this->desired_species_count + 3) {
+//         this->compatibility_threshold += 0.3;
+//     }
+//     if (this->compatibility_threshold < 0.3) this->compatibility_threshold = 0.3;
+
+// }
+
 void NEATAgent::next_generation(){
     //Check if there was improvement from last generation
     if (this->global_highest_fitness > this->last_best_fitness) { 
@@ -326,15 +564,10 @@ void NEATAgent::next_generation(){
         return;
     }
 
-    //If improvement is occuring, clear all species members (spceies representative will still exist)
-    for (Species* s : this->species) {
-        s->networks.clear();
-    }
-
     Network* best_performer = nullptr;
-    Network* best_clone = nullptr;
+    // Network* best_clone = nullptr;
 
-    //Cycle through all members of the population
+    //Cycle through all members of the population and assign to species
     for (int j = 0; j < population.size(); j++){
         Network* current_network = this->population[j];
 
@@ -362,10 +595,6 @@ void NEATAgent::next_generation(){
         if (best_performer == nullptr || current_network->fitness > best_performer->fitness){
             best_performer = current_network;
             
-            //Clone the best performer immediately
-            if (best_clone != nullptr) delete best_clone;
-            best_clone = new Network(this->inputs, this->outputs, &best_performer->get_depth_data(), &best_performer->get_connection_data(), this->hidden_activation, this->output_activation, false, this->rng, this);
-        
             //If best is better than global champion, change global champion to best
             if (current_network->fitness > this->global_highest_fitness) {
                 this->global_highest_fitness = current_network->fitness;
@@ -374,19 +603,7 @@ void NEATAgent::next_generation(){
                 this->global_champion->fitness = current_network->fitness;
             }
         }
-    }
 
-    //Delete bottom 65% of networks in all species so top 35% can reproduce
-    for (Species* s: this->species){
-        if (s->networks.empty()) continue;
-        s->sort_networks();
-
-        int survivors = ceil(s->networks.size() * 0.35);
-        if (survivors < 1) survivors = 1;
-        for (int k = survivors; k < s->networks.size(); k++) {
-            delete s->networks[k];
-        }
-        s->networks.resize(survivors);
     }
 
     //Adjust each networks fitness by the size of the species
@@ -394,6 +611,16 @@ void NEATAgent::next_generation(){
         for (Network* network: s->networks){
             network->adjusted_fitness = network->fitness / s->networks.size();
         }
+    }
+
+    //Delete bottom 50% of networks in all species so top 50% can reproduce
+    for (Species* s: this->species){
+        if (s->networks.empty()) continue;
+        s->sort_networks();
+
+        int survivors = ceil(s->networks.size() * 0.5);
+        if (survivors < 1) survivors = 1;
+        s->networks.resize(survivors);
     }
 
     for (Species* s : this->species) {
@@ -420,7 +647,7 @@ void NEATAgent::next_generation(){
             }
         }
 
-        //Kill species that haven't improved in 15 generations
+        //Kill species that haven't improved in 20 generations
         if (s->age > 25 && s->gens_since_improved > 20) {
             for (Network* n : s->networks) {
                 n->adjusted_fitness = 0.0f;
@@ -437,40 +664,40 @@ void NEATAgent::next_generation(){
 
     std::vector<Network*> next_generation; 
 
-    // Take the best network we found earlier and add to the new generation
-    if (best_clone != nullptr) {
-        next_generation.push_back(best_clone);
-        best_clone = nullptr;
-    }
-
-
     for (Species* s: this->species){
+        if (global_adjusted_sum == 0.0) break;
+
         //Calculate the sum for this species
         float species_adj_sum = 0.0;
         for (Network* network : s->networks) species_adj_sum += network->adjusted_fitness;
         
         //Determine offspring count
-        if (global_adjusted_sum == 0.0) break;
-        int offspring_count = (species_adj_sum / global_adjusted_sum) * this->population_size;
-        
-        if (offspring_count <= 0 && species_adj_sum > 0) offspring_count = 1;
-        if (offspring_count <= 0) continue;
+        int offspring_count = std::floor((species_adj_sum / global_adjusted_sum) * this->population_size);
 
+        //Add best network in this species to next generation
+        if (offspring_count >= 1){
+            Network* species_best = s->networks[0];
+            next_generation.push_back(new Network(this->inputs, this->outputs, &species_best->get_depth_data(), &species_best->get_connection_data(), this->hidden_activation, this->output_activation, false, this->rng, this));
+            offspring_count--;
+        }
         //Perform crossover and add to next generation
-        std::vector<Network*> babies = s->reproduce(offspring_count, this->rng);
-        next_generation.insert(next_generation.end(), babies.begin(), babies.end());
+        if (offspring_count >= 1){
+            std::vector<Network*> babies = s->reproduce(offspring_count, this->rng);
+            next_generation.insert(next_generation.end(), babies.begin(), babies.end());
+        }
     }
 
     //Since we could get a next_generation size less than population_size, we want to fill in remaining gaps
     while (next_generation.size() < this->population_size){
-        if (this->species.empty()) break;
+        //Erase these once its working
+        ERR_FAIL_COND_MSG(this->species.empty(), "NEATAgent Speciation Error: A");
         
         //Pick random species
         int s_idx = std::uniform_int_distribution<>(0, this->species.size()-1)(this->rng);
         Species* s = this->species[s_idx];
-        
-        if (s->networks.empty()) continue;
 
+        ERR_FAIL_COND_MSG(s->networks.empty(), "NEATAgent Speciation Error: B");
+        
         //Pick random network
         int n_idx = std::uniform_int_distribution<>(0, s->networks.size()-1)(this->rng);
         Network* parent = s->networks[n_idx];
@@ -483,19 +710,17 @@ void NEATAgent::next_generation(){
     //Update representative genomes
     for (Species* s : this->species) {
         if (!s->networks.empty()) {
-            s->representative_genome = s->networks[0]->get_connection_data(); //[0] is best since networks are sorted
+            int n_idx = std::uniform_int_distribution<>(0, s->networks.size()-1)(this->rng);
+            s->representative_genome = s->networks[n_idx]->get_connection_data(); //pick random network as new representative
         }
     }
 
-    //Delete old parents
-    for (Species* s : this->species) {
-        for (Network* parent : s->networks) {
-            delete parent;
-        }
-        s->networks.clear();
+    for (Network* n : this->population) {
+        delete n;
     }
+    this->population.clear();
 
-    //Delete species object
+    // Delete empty species object
     auto it = this->species.begin();
     while (it != this->species.end()) {
         if ((*it)->networks.empty()) {
