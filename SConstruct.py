@@ -3,6 +3,9 @@ import sys
 
 env = SConscript("godot-cpp/SConstruct")
 
+if env["target"] == "template_debug":
+    env.Append(CCFLAGS=["-O0", "-g"])
+
 env.Append(CPPPATH=["src/"])
 sources = Glob("src/*.cpp")
 
@@ -13,8 +16,6 @@ if env["platform"] == "macos":
         ),
         source=sources,
     )
-    env.Append(CPPDEFINES=["ACCELERATE_NEW_LAPACK"])
-    env.Append(LINKFLAGS=["-framework", "Accelerate"])
 else:
     library = env.SharedLibrary(
         "addons/NEAT/bin/libNEAT{}{}".format(env["suffix"], env["SHLIBSUFFIX"]),

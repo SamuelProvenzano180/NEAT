@@ -61,7 +61,7 @@ std::vector<float> Network::guess(std::vector<float> inputs){
 void Network::weight_mutation(std::mt19937 &gen){
     std::uniform_real_distribution<float> prob(0.0, 1.0);
     std::uniform_real_distribution<float> random_weight(-5.0, 5.0);
-    std::normal_distribution<float> nudge(0.0f, 0.1f);
+    std::normal_distribution<float> nudge(0.0f, 0.13f);
 
     for (int i = 0; i < this->connection_data.size(); i++){
         //10% chance to leave this weight exactly as is
@@ -73,7 +73,8 @@ void Network::weight_mutation(std::mt19937 &gen){
         }
         //80% chance to nudge it
         else {
-            this->connection_data[i][2] += nudge(gen);
+            //Multiplied by weight chance so decreaing the chance decreases the nudge. This is useful for late stage fine tune training
+            this->connection_data[i][2] += nudge(gen) * (this->parent_agent->rate_weight_mutate);
         }
 
         //Clamp weights to prevent them from drifting too far

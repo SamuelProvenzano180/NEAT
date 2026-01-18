@@ -13,6 +13,7 @@ class Network;
 struct Species {
     int size = 0;
     int age = 0;
+    int offspring_count = 0;
     int gens_since_improved = 0;
     float max_fitness_ever = 0.0f;
     std::vector<Network*> networks;
@@ -21,7 +22,6 @@ struct Species {
     void add_member(Network* network);
     void sort_networks();
     float evaluate_compatibility(Network* network);
-    std::vector<Network*> reproduce(int offspring_count, std::mt19937 &gen);
-    Network* perform_crossover(Network* netA, Network* netB, std::mt19937 &gen);
+    static Network* perform_crossover(Network* netA, Network* netB, std::mt19937 &gen);
 };
 #endif

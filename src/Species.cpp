@@ -81,23 +81,6 @@ float Species::evaluate_compatibility(Network* candidate){
     return term1 + term2 + term3;
 }
 
-std::vector<Network*> Species::reproduce(int offspring_count, std::mt19937 &gen){
-    std::vector<Network*> new_networks;
-    std::uniform_int_distribution<> distr(0, this->networks.size()-1);
-    
-    if (this->networks.empty()) return new_networks;
-
-    //Create a child of two random networks
-    for (int i = 0; i < offspring_count; i++){
-        int rand_network_1 = distr(gen);
-        int rand_network_2 = distr(gen);
-        Network* child_net = perform_crossover(this->networks[rand_network_1], this->networks[rand_network_2], gen);
-        new_networks.push_back(child_net);
-    }
-
-    return new_networks;
-}
-
 Network* Species::perform_crossover(Network* netA, Network* netB, std::mt19937 &gen){
     std::vector<std::vector<float>> new_connection_data;
 

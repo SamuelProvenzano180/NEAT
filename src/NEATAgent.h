@@ -35,6 +35,7 @@ namespace godot {
         float last_best_fitness;
         int stagnation_limit = INT_MAX;
 
+        std::vector<Network*> reproduce(Species* s);
         static std::vector<float> packed_to_vector_float(const PackedFloat32Array &array);
         static PackedFloat32Array vector_to_packed_float(const std::vector<float> &vec);
 
@@ -45,10 +46,10 @@ namespace godot {
 
         std::mt19937 rng;
 
-        float rate_weight_mutate;
-        float rate_connection_mutate;
-        float rate_enable_mutate;
-        float rate_node_mutate;
+        float rate_weight_mutate = 0.8;
+        float rate_connection_mutate = 0.1;
+        float rate_enable_mutate = 0.05;
+        float rate_node_mutate = 0.03;
         int size_cap = INT_MAX;
 
         std::map<std::pair<int, int>, int> innovation_table;
@@ -59,7 +60,7 @@ namespace godot {
 
         void initialize_population(int inputs, int outputs, int population_size = 100, String hidden_activation = "tanh", String output_activation = "tanh", int desired_species_count = 5, float initial_enabled_percent = 0.25);
         void import_template(Array network_data, int population_size, int desired_species_count);
-        void set_mutation_rates(float rate_weight_mutate = 0.95f, float rate_connection_mutate = 0.1f, float rate_enable_mutate = 0.15f, float rate_node_mutate = 0.002);
+        void set_mutation_rates(float rate_weight_mutate = 0.8f, float rate_connection_mutate = 0.1f, float rate_enable_mutate = 0.05f, float rate_node_mutate = 0.03);
 
         PackedFloat32Array get_network_guess(int index, PackedFloat32Array inputs);
         PackedFloat32Array get_champion_guess(PackedFloat32Array inputs);
