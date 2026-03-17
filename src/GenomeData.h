@@ -3,6 +3,7 @@
 
 #include <map>
 #include <godot_cpp/classes/ref_counted.hpp>
+#include <string>
 
 namespace godot {
 

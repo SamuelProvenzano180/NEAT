@@ -140,7 +140,7 @@ void NEATAgent::initialize_population(const Ref<NEATConfig> configuration){
     valid = true;
 }
 
-void NEATAgent::import_template(const Ref<GenomeData> genome_data, const Ref<NEATConfig> configuration){ //population_config doesnt contain initial percent chance
+void NEATAgent::import_template(const Ref<GenomeData> genome_data, const Ref<NEATConfig> configuration){
 
     //Reset everything if it was initialized previously
     if (valid){

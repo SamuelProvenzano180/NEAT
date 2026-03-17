@@ -141,7 +141,7 @@ void Network::weight_mutation(){
 
     for (int i = 0; i < connection_data.size(); i++){
         //10% chance to leave this weight exactly as is
-        if (rand1(parent_agent->get_rng()) > 0.90f) continue; 
+        if (rand1(parent_agent->get_rng()) > 0.90f) continue;
 
         //10% chance to completely rerandomize this weights value
         if (rand1(parent_agent->get_rng()) < 0.10f) {

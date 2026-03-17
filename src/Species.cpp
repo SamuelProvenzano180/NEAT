@@ -142,7 +142,7 @@ Network* Species::perform_crossover(Network* netA, Network* netB){
         //Exists in prev_data so matching gene
         if (less_fit_data.count((int)innov_num) > 0){
             //80% chance to take weight from higher genome
-            if (rand1(netA->get_parent_agent()->get_rng()) > 0.2f) { 
+            if (rand1(netA->get_parent_agent()->get_rng()) > 0.2f) {
                 new_connection_data.push_back(connection);
             }
             //20% chance to average both
