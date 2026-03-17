@@ -1,6 +1,8 @@
 #include "register_types.h"
 #include "NEATAgent.h"
 #include "NetworkAgent.h"
+#include "NEATConfig.h"
+#include "GenomeData.h"
 #include <gdextension_interface.h>
 #include <godot_cpp/core/defs.hpp>
 #include <godot_cpp/godot.hpp>
@@ -12,8 +14,10 @@ void initialize_neat(ModuleInitializationLevel p_level){
         return;
     }
 
-    ClassDB::register_class<NEATAgent>();
-    ClassDB::register_class<NetworkAgent>();
+    ClassDB::register_class<godot::NEATAgent>();
+    ClassDB::register_class<godot::NetworkAgent>();
+    ClassDB::register_class<godot::NEATConfig>();
+    ClassDB::register_class<godot::GenomeData>();
 }
 
 void uninitialize_neat(ModuleInitializationLevel p_level){

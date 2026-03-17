@@ -1,131 +1,115 @@
 #include "NetworkAgent.h"
+#include "GenomeData.h"
 
 using namespace godot;
 
 void NetworkAgent::_bind_methods() {
-    ClassDB::bind_method(D_METHOD("initialize_agent", "network_data"), &NetworkAgent::initialize_agent);
+    ClassDB::bind_method(D_METHOD("initialize_agent", "genome_data"), &NetworkAgent::initialize_agent);
     ClassDB::bind_method(D_METHOD("guess", "inputs"), &NetworkAgent::guess);
+    ClassDB::bind_method(D_METHOD("clear_memory"), &NetworkAgent::clear_memory);
 }
 
-void NetworkAgent::initialize_agent(Array network_data){
-
-    Array new_network_data = network_data.duplicate(true);
-
-    //Set fields and error check
-    ERR_FAIL_COND_MSG(new_network_data.size() < 4, "NetworkAgent Import Error: Network data array size must be greater than 3");
-
-    for (int i = 0; i < 4; i++) {
-        ERR_FAIL_COND_MSG(new_network_data[i].get_type() != Variant::INT && new_network_data[i].get_type() != Variant::FLOAT, ("NetworkAgent Import Error: Index " + std::to_string(i) + " is not a number").c_str());
-    }
-
-    for (int i = 4; i < new_network_data.size(); i++) {
-        Variant item = new_network_data[i];
-
-        //Must be an array
-        ERR_FAIL_COND_MSG(item.get_type() != Variant::ARRAY, ("NetworkAgent Import Error: Item at index " + std::to_string(i) + " is not an Array").c_str());
-
-        Array conn = item;
-
-        //Must be size 3
-        ERR_FAIL_COND_MSG(conn.size() != 3, ("NetworkAgent Import Error: Connection at index " + std::to_string(i) + " has invalid size. Expected 3").c_str());
-
-        //Must be [int, int, float] (float can be casted to int and int can be casted to float so accept both)
-        bool id1_ok = (conn[0].get_type() == Variant::INT || conn[0].get_type() == Variant::FLOAT);
-        bool id2_ok = (conn[1].get_type() == Variant::INT || conn[1].get_type() == Variant::FLOAT);
-        bool weight_ok = (conn[2].get_type() == Variant::INT || conn[2].get_type() == Variant::FLOAT);
-
-        ERR_FAIL_COND_MSG(!id1_ok || !id2_ok || !weight_ok, ("NetworkAgent Import Error: Connection at index " + std::to_string(i) + " has invalid types. Expected [int, int, float]").c_str());
-    }
-
-    this->connections.clear();
-    this->inputs = new_network_data.pop_front();
-    this->outputs = new_network_data.pop_front();
-    this->hidden_function = new_network_data.pop_front();
-    this->output_function = new_network_data.pop_front();
-
-    //Determine network size
-    int max_id = this->inputs + this->outputs - 1;
-
-    //Load connections
-    for (int i = 0; i < new_network_data.size(); i++){
-        Array connection_data = new_network_data[i];
-        int from_id = connection_data[0];
-        int to_id = connection_data[1];
-        float weight = connection_data[2];
-        
-        //Store connection
-        std::pair<int, int> link = {from_id, to_id};
-        this->connections.push_back({link, weight});
-
-        //Track max_id to resize vector later
-        if (from_id > max_id) max_id = from_id;
-        if (to_id > max_id) max_id = to_id;
-    }
-    
-    //Resize the values vector based on max id
-    this->values.resize(max_id + 1, 0.0f);
+NetworkAgent::NetworkAgent(){
+    valid = false;
 }
 
-PackedFloat32Array NetworkAgent::guess(PackedFloat32Array input_array){
+NetworkAgent::~NetworkAgent(){
+    if (network) delete network;
+}
+
+void NetworkAgent::initialize_agent(const Ref<GenomeData> genome_data){
+    valid = false;
+
     //Error check
-    ERR_FAIL_COND_V_MSG(input_array.size() != this->inputs-1, PackedFloat32Array(), "NetworkAgent Guess Error: Number of inputs is not equal to expected input size");
+    ERR_FAIL_COND_MSG(!genome_data.is_valid(), "NetworkAgent Error: GenomeData not valid.");
 
-    //Append bias input into the input array
-    input_array.push_back(1.0);
+    //Grab the genome contents from genome_data object
+    Array new_network_data = genome_data->get_genome_contents().duplicate(true);
 
-    //Reset all values in the vector
-    std::fill(this->values.begin(), this->values.end(), 0.0f);
+    //Initialze fields from genome content
+    inputs = new_network_data.pop_front();
+    outputs = new_network_data.pop_front();
 
-    //Load inputs into the input neurons
-    for (int i = 0; i < this->inputs && i < input_array.size(); i++){
-        this->values[i] = input_array[i];
-    }
+    new_network_data.pop_front();
 
-    //Forward loop
-    std::set<int> neuron_visited;
+    std::map<int, float> neuron_leak;
+    std::map<int, Neuron*> neuron_data;
+
     
-    for (const auto& conn : this->connections){
-        int from = conn.first.first;
-        int to = conn.first.second;
-        float weight = conn.second;
+    int max_neuron_id = -1;
+    //Cycle through network data from genome
+    for (int i = 0; i < new_network_data.size(); i++){
+        //Seperate the connection data into unique variabled
+        Array this_conn = new_network_data[i];
+        int from = this_conn[0];
+        int to = this_conn[1];
+        float from_leak = this_conn[3];
+        float to_leak = this_conn[4];
 
-        //Activation function
-        if (from >= this->inputs){ 
-            if (neuron_visited.find(from) == neuron_visited.end()){
-                this->values[from] = activation_func(this->values[from], this->hidden_function);
-                neuron_visited.insert(from);
-            }
-        }
-        
-        //Multiply weight by input
-        this->values[to] += this->values[from] * weight;
+        //Store the leaks
+        neuron_leak.insert({from, from_leak});
+        neuron_leak.insert({to, to_leak});
+
+        //Find the max_neuron_id
+        if (from > max_neuron_id) max_neuron_id = from;
+        if (to > max_neuron_id) max_neuron_id = to;
     }
 
-    //Collect outputs
-    std::vector<float> outputs;
-    for (int i = this->inputs; i < this->inputs + this->outputs; i++){
-        // Apply Output Activation
-        float output_val = activation_func(this->values[i], this->output_function);
-        outputs.push_back(output_val);
+    //Cycle through every neuron ID and create the neuron
+    for (int i = 0; i < max_neuron_id + 1; i++){
+        Neuron::Type type;
+        if (i < inputs) type = Neuron::Type::INPUT;
+        else if (i < inputs + outputs) type = Neuron::Type::OUTPUT;
+        else type = Neuron::Type::HIDDEN;
+
+        Neuron* new_neuron = new Neuron(i, type, neuron_leak[i]);
+        neuron_data.insert({i, new_neuron});
     }
 
-    return vector_to_packed_float(outputs);
+    //Create the connection data with all connections enabled
+    std::vector<std::vector<float>> connection_data;
+    int innov_num = 0;
+    for (auto conn: new_network_data){
+        //Seperate the connection data into unique variabled
+        Array conn_array = conn;
+        int from = conn_array[0];
+        int to = conn_array[1];
+        float weight = conn_array[2];
+
+        std::vector<float> connection = {(float)from, (float)to, weight, 1.0f, (float)(innov_num)};
+        connection_data.push_back(connection);
+
+        innov_num++;
+    }
+
+    if (network) delete network;
+
+    valid = true;
+    network = new Network(inputs, outputs, &neuron_data, &connection_data);
 }
 
-float NetworkAgent::activation_func(float x, int type){
-    if (type == 0){
-        return (x > 0) ? x : 0.01f * x;
-    }
-    else if (type == 1){
-        return x;
-    }
-    else if (type == 2){
-        return 1.0 / (1.0 + exp(-x));
-    }
-    else if (type == 3){
-        return tanh(x);
-    }
-    return 0.0;
+PackedFloat32Array NetworkAgent::guess(const PackedFloat32Array input_array){
+    //Error check
+    ERR_FAIL_COND_V_MSG(!valid, PackedFloat32Array(), "NetworkAgent Error: NetworkAgent not valid. Initialize NetworkAgent first.");
+    ERR_FAIL_COND_V_MSG(input_array.size() != inputs-1, PackedFloat32Array(), "NetworkAgent Error: input_array size is not equal to expected input size.");
+
+    std::vector<float> input_vec = NetworkAgent::packed_to_vector_float(input_array);
+    //Add the bias input
+    input_vec.push_back(1.0f);
+    //Get the guess
+    std::vector<float> guess = network->guess(input_vec);
+    return NetworkAgent::vector_to_packed_float(guess);
+}
+
+void NetworkAgent::clear_memory(){
+    //Error check
+    ERR_FAIL_COND_MSG(!valid, "NetworkAgent Error: NetworkAgent not valid. Initialize NetworkAgent first.");
+    //Clear the networks memory
+    network->clear_memory();
+}
+
+float NetworkAgent::activation_func(const float x) const{
+    return tanh(x);
 }
 
 std::vector<float> NetworkAgent::packed_to_vector_float(const PackedFloat32Array &array) {

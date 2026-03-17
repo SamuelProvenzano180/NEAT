@@ -1,39 +1,49 @@
 #include "Species.h"
 #include "Network.h"
 
+Species::Species(){
+    size = 0;
+    age = 0;
+    offspring_count = 0;
+    gens_since_improved = 0;
+    max_fitness_ever = 0.0f;
+}
+
+Species::~Species(){}
+
 void Species::add_member(Network* network){
-    this->size++;
-    this->networks.push_back(network);
+    size++;
+    networks.push_back(network);
 }
 
 void Species::sort_networks() {
-    std::sort(this->networks.begin(), this->networks.end(), [](Network* a, Network* b) {
-        return a->fitness > b->fitness;
+    std::sort(networks.begin(), networks.end(), [](Network* a, Network* b) {
+        return a->get_fitness() > b->get_fitness();
     });
 }
 
 float Species::evaluate_compatibility(Network* candidate){
     //Set coefficient values
-    float c1 = 1.0;
-    float c2 = 1.0;
-    float c3 = 0.4;
+    float c1 = 1.0f;
+    float c2 = 1.0f;
+    float c3 = 0.4f;
 
     //Get both genes to compare
     const std::vector<std::vector<float>>& genes1 = candidate->get_connection_data();
-    const std::vector<std::vector<float>>& genes2 = this->representative_genome;
+    const std::vector<std::vector<float>>& genes2 = representative_connections;
 
-    auto it1 = genes1.begin();
-    auto it2 = genes2.begin();
-
-    int matching = 0;
+    int matching_connections = 0;
     int disjoint = 0;
     int excess = 0;
     float weight_diff_sum = 0.0f;
 
-    //Determine if specific genes are matching, disjoint or excess
-    while (it1 != genes1.end() || it2 != genes2.end()) {
+    auto it1 = genes1.begin();
+    auto it2 = genes2.begin();
 
-        // heck if we reached end of one list (Excess genes)
+    //Determine if specific genes are matching, disjoint or excess
+    while (it1 != genes1.end() || it2 != genes2.end()){ //Using an iterator here for simplicity sake
+
+        // check if we reached end of one list (Excess genes)
         if (it1 == genes1.end()) {
             excess++;
             it2++;
@@ -50,7 +60,7 @@ float Species::evaluate_compatibility(Network* candidate){
 
         //If innov numbers are same, matching gene
         if (innov1 == innov2) {
-            matching++;
+            matching_connections++;
             weight_diff_sum += std::abs((*it1)[2] - (*it2)[2]);
             it1++;
             it2++;
@@ -66,30 +76,48 @@ float Species::evaluate_compatibility(Network* candidate){
         }
     }
 
-    //Determine compatability value
-    float max_size = std::max(genes1.size(), genes2.size());
-    float N = (max_size < 20.0f) ? 1.0f : max_size;
+    float average_leak_diff = 0.0f;
+    int matching_neurons = 0;
+    float max_memory_frames = candidate->get_parent_agent()->get_max_memory_frames();
 
-    float term1 = (c1 * excess) / N;
-    float term2 = (c2 * disjoint) / N;
+    //Cycle through all neurons
+    for (auto& [id, neuron]: candidate->get_neurons()){
+        //If neuron exists in the representative leak, there is a match
+        if (representative_leaks.count(id) > 0){
+            //Get the difference in the log of the leaks
+            float first_leak = neuron->get_leak_value();
+            float second_leak = representative_leaks[id];
+            // leak_diff_sum += std::abs(log(second_leak) - log(first_leak)) / log(max_memory_frames); This line becomes the line below
+            average_leak_diff += std::abs(log(second_leak / first_leak)) / log(max_memory_frames);
+            matching_neurons++;
+        }
+    }
+
+    //Determine compatability value with parameters
+    float term1 = c1 * excess;
+    float term2 = c2 * disjoint;
     float term3 = 0.0f;
     
-    if (matching > 0) {
-        term3 = c3 * (weight_diff_sum / matching);
+    if (matching_connections > 0) {
+        term3 += weight_diff_sum / matching_connections;
     }
+    if (matching_neurons > 0){
+        term3 += average_leak_diff / matching_neurons;
+    }
+    term3 *= c3;
 
     return term1 + term2 + term3;
 }
 
-Network* Species::perform_crossover(Network* netA, Network* netB, std::mt19937 &gen){
+Network* Species::perform_crossover(Network* netA, Network* netB){
     std::vector<std::vector<float>> new_connection_data;
 
-    std::uniform_real_distribution<float> dis(0.0, 1.0);
+    std::uniform_real_distribution<float> rand1(0.0f, 1.0f);
 
     //Determine more and less fit parent
     Network* more_fit = nullptr;
     Network* less_fit = nullptr;
-    if (netA->fitness > netB->fitness){
+    if (netA->get_fitness() > netB->get_fitness()){
         more_fit = netA;
         less_fit = netB;
     }
@@ -102,24 +130,26 @@ Network* Species::perform_crossover(Network* netA, Network* netB, std::mt19937 &
     std::map<int, float> less_fit_data;
 
     //Fill less fit parent data with the innov num and weight pair
-    for (std::vector<float> connection: less_fit->connection_data){
+    for (std::vector<float> connection: less_fit->get_connection_data()){
         float innov_num = connection[4];
         float weight = connection[2];
         less_fit_data.insert({(int)innov_num, weight});
     }
     //Cycle through more fit parent connectoin data
-    for (std::vector<float> connection: more_fit->connection_data){
+    for (std::vector<float> connection: more_fit->get_connection_data()){
         float innov_num = connection[4];
         float weight = connection[2];
         //Exists in prev_data so matching gene
         if (less_fit_data.count((int)innov_num) > 0){
-            //Random choice from this weight and other weight
-            if (dis(gen) > 0.5){
+            //80% chance to take weight from higher genome
+            if (rand1(netA->get_parent_agent()->get_rng()) > 0.2f) { 
                 new_connection_data.push_back(connection);
             }
-            else{
-                std::vector<float> new_genome = {connection[0], connection[1], less_fit_data[innov_num], connection[3], innov_num};
-                new_connection_data.push_back(new_genome);
+            //20% chance to average both
+            else {
+                float avg_weight = (connection[2] + less_fit_data[innov_num]) / 2.0f;
+                std::vector<float> averaged_gene = {connection[0], connection[1], avg_weight, connection[3], innov_num};
+                new_connection_data.push_back(averaged_gene);
             }
         }
         //Disjoint/excess
@@ -129,5 +159,49 @@ Network* Species::perform_crossover(Network* netA, Network* netB, std::mt19937 &
     }
 
     //Create and return the new child network
-    return new Network(netA->inputs, netA->outputs, &more_fit->get_depth_data(), &new_connection_data, netA->hidden_func_str, netA->output_func_str, true, gen, netA->parent_agent);
+    return new Network(netA->get_inputs(), netA->get_outputs(), &more_fit->get_neurons(), &new_connection_data, true, netA->get_parent_agent());
+}
+
+std::vector<Network*>& Species::get_networks(){
+    return networks;
+}
+
+int Species::get_age() const{
+    return age;
+}
+
+void Species::set_age(const int amount){
+    age = amount;
+}
+
+int Species::get_offspring_count() const{
+    return offspring_count;
+}
+
+void Species::set_offspring_count(const int amount){
+    offspring_count = amount;
+}
+
+int Species::get_gens_since_improved() const{
+    return gens_since_improved;
+}
+
+void Species::set_gens_since_improved(const int amount){
+    gens_since_improved = amount;
+}
+
+int Species::get_max_fitness_ever() const{
+    return max_fitness_ever;
+}
+
+void Species::set_max_fitness_ever(const int amount){
+    max_fitness_ever = amount;
+}
+
+void Species::set_representative_connections(const std::vector<std::vector<float>>& new_value){
+    representative_connections = new_value;
+}
+
+void Species::set_representative_leaks(const std::map<int, float>& new_value){
+    representative_leaks = new_value;
 }

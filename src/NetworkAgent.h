@@ -6,25 +6,34 @@
 #include <set>
 #include <string>
 #include <godot_cpp/classes/ref_counted.hpp>
+#include "GenomeData.h"
+#include "Neuron.h"
+#include "Network.h"
 
 namespace godot {
+
     class NetworkAgent : public RefCounted {
         GDCLASS(NetworkAgent, RefCounted);
-    protected:
-        static void _bind_methods();
-    private:
-        int inputs = -1;
-        int outputs = -1;
-        int hidden_function = -1;
-        int output_function = -1;
-        std::vector<float> values;
-        std::vector<std::pair<std::pair<int, int>, float>> connections;
 
-        void initialize_agent(Array network_data);
-        PackedFloat32Array guess(PackedFloat32Array inputs);
+    public:
+        NetworkAgent();
+        ~NetworkAgent();
+
+        void initialize_agent(const Ref<GenomeData> genome_data);
+        PackedFloat32Array guess(const PackedFloat32Array input_array);
+        void clear_memory();
+    
+    private:
+        static void _bind_methods();
+
+        bool valid;
+        int inputs;
+        int outputs;
+        Network* network = nullptr;
+
+        float activation_func(float x) const;
         std::vector<float> packed_to_vector_float(const PackedFloat32Array &array);
         PackedFloat32Array vector_to_packed_float(const std::vector<float> &vec);
-        float activation_func(float x, int type);
     };
 };
 
