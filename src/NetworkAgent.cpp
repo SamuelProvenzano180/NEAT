@@ -5,7 +5,7 @@ using namespace godot;
 
 void NetworkAgent::_bind_methods() {
     ClassDB::bind_method(D_METHOD("initialize_agent", "genome_data"), &NetworkAgent::initialize_agent);
-    ClassDB::bind_method(D_METHOD("guess", "inputs"), &NetworkAgent::guess);
+    ClassDB::bind_method(D_METHOD("guess", "input_array"), &NetworkAgent::guess);
     ClassDB::bind_method(D_METHOD("clear_memory"), &NetworkAgent::clear_memory);
 }
 

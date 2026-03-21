@@ -512,12 +512,12 @@ void NEATAgent::next_generation(){
         }
     }
 
-    //Delete bottom 50% of networks in all species so top 50% can reproduce.
+    //Delete bottom 75% of networks in all species so top 25% can reproduce.
     for (Species* s: species){
         if (s->get_networks().empty()) continue;
         s->sort_networks();
 
-        int survivors = ceil(s->get_networks().size() * 0.5f);
+        int survivors = ceil(s->get_networks().size() * 0.25f);
         s->get_networks().resize(survivors);
     }
 

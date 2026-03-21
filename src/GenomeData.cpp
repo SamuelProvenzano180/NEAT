@@ -3,7 +3,7 @@
 using namespace godot;
 
 void GenomeData::_bind_methods() {
-    ClassDB::bind_method(D_METHOD("initialize", "genome_data"), &GenomeData::initialize);
+    ClassDB::bind_method(D_METHOD("initialize", "genome_array"), &GenomeData::initialize);
     ClassDB::bind_method(D_METHOD("get_genome_contents"), &GenomeData::get_genome_contents);
     ClassDB::bind_method(D_METHOD("print"), &GenomeData::print);
 }
